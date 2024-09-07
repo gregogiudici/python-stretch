@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15...3.26)
 
-project(pytest LANGUAGES CXX)
+project(pystretch LANGUAGES CXX)
 
 if (NOT SKBUILD)
   message(WARNING "\
@@ -33,6 +33,9 @@ find_package(Python 3.8
 # Import nanobind through CMake's find_package mechanism
 find_package(nanobind CONFIG REQUIRED)
 
+# We need to include stretch folder for signalsmith-stretch's headers
+include_directories(include ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
 # We are now ready to compile the actual extension module
 nanobind_add_module(
   # Name of the extension
@@ -52,7 +55,7 @@ nanobind_add_module(
   NB_STATIC
 
   # Source code goes here
-  src/bidings.cpp
+  src/stretch-bindings.cpp
 )
 
 

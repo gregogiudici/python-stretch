@@ -33,11 +33,3 @@ produce binary wheels for a large variety of platforms. If a `pypi_password`
 token is provided using GitHub Action's _secrets_ feature, this workflow can
 even automatically upload packages on PyPI.
 
-
-License
--------
-
-_nanobind_ and this example repository are both provided under a BSD-style
-license that can be found in the [LICENSE](./LICENSE) file. By using,
-distributing, or contributing to this project, you agree to the terms and
-conditions of this license.

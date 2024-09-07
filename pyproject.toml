@@ -12,7 +12,7 @@ authors = [
     { name = "Gregorio Andrea Giudici", email = "greg.giudici96@gmail.com" },
 ]
 classifiers = [
-    "License :: OSI Approved :: BSD License",
+    "License :: OSI Approved :: MIT License",
 ]
 
 [project.urls]
