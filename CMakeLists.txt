@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.15...3.26)
 project(pystretch LANGUAGES CXX)
 
 if (NOT SKBUILD)
-  message(WARNING "\
+  message(WARNING "
   This CMake file is meant to be executed using 'scikit-build'. Running
   it directly will almost certainly not produce the desired result. If
   you are a user trying to install this package, please use the command
