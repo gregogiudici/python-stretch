@@ -115,35 +115,34 @@ struct Stretch{
         }
 
         // === Processing ===
-        nb::ndarray<nb::numpy, nb::ndim<2>> process(nb::ndarray<nb::numpy, nb::ndim<2>> audio_input){
-            auto input = audio_input.view();
-            auto data = input.data();
+        nb::ndarray<nb::numpy, Sample,nb::ndim<2>> process(nb::ndarray<nb::numpy, Sample,nb::ndim<2>> audio_input){
+            auto data = audio_input.data();
 
-            if (input.shape(0) > 2) {
+            if (audio_input.shape(0) > 2) {
                 throw std::runtime_error("Only mono or stereo audio is supported. The input should have shape (1,samples) or (2,samples).");
             }
 
             // Padding for latency
-            size_t paddedInputSamples = in.shape(1) + stretch_.inputLatency();
+            size_t paddedInputSamples = audio_input.shape(1) + stretch_.inputLatency();
 	        int tailSamples = exactLength_ ? stretch_.outputLatency() : (stretch_.outputLatency() + stretch_.inputLatency()); // if we don't need exact length, add a bit more output to catch any wobbles past the end
-            int outputSamples = std::round(input.shape(1) * _timeFactor);
+            int outputSamples = std::round(audio_input.shape(1) * timeFactor_);
             size_t paddedOutputSamples = outputSamples + tailSamples;
 
             // Create input buffer
-            Sample** inputBuffer = new Sample*[input.shape(0)];
-            for (size_t i = 0; i < input.shape(0); i++) {
+            Sample** inputBuffer = new Sample*[audio_input.shape(0)];
+            for (size_t i = 0; i < audio_input.shape(0); i++) {
                 inputBuffer[i] = new Sample[paddedInputSamples];
                 std::fill(inputBuffer[i], inputBuffer[i] + paddedInputSamples, 0);
             }
 
             // Copy input data to input buffer[channel]
-            for (size_t i = 0; i < input.shape(0); i++) {
-                std::copy(data + i*input.shape(1), data + (i+1)*input.shape(1), inputBuffer[i]);
+            for (size_t i = 0; i < audio_input.shape(0); i++) {
+                std::copy(data + i*audio_input.shape(1), data + (i+1)*audio_input.shape(1), inputBuffer[i]);
             }
 
             // Create output buffer
-            Sample** outputBuffer = new Sample*[in.shape(0)];
-            for (size_t i = 0; i < input.shape(0); i++) {
+            Sample** outputBuffer = new Sample*[audio_input.shape(0)];
+            for (size_t i = 0; i < audio_input.shape(0); i++) {
                 outputBuffer[i] = new Sample[paddedOutputSamples];
                 std::fill(outputBuffer[i], outputBuffer[i] + paddedOutputSamples, 0);
             }
@@ -156,30 +155,72 @@ struct Stretch{
             inBuffer.setOffset(stretch_.inputLatency());
 
             // PROCESSING
-            stretch_.process(inBuffer, input.shape(1), outBuffer, OutputSamples);
+            stretch_.process(inBuffer, audio_input.shape(1), outBuffer, outputSamples);
 
             // Read the last bit of output without providing any further input
             outBuffer.setOffset(outputSamples);
             stretch_.flush(outputBuffer, tailSamples);
             outBuffer.setOffset(0);
-        }
+
+            // Allocate output data buffer and shape outside the conditional
+            Sample* outData = nullptr;
+            size_t outShape[2];
+
+            // Decide the size of `outData` and `outShape` based on `exactLength_`
+            if (exactLength_) {
+                outData = new Sample[audio_input.shape(0) * outputSamples];
+
+                for (size_t i = 0; i < audio_input.shape(0); ++i) {
+                    std::copy(outputBuffer[i], outputBuffer[i] + outputSamples, outData + i * outputSamples);
+                }
+
+                outShape[0] = audio_input.shape(0);
+                outShape[1] = outputSamples;
+                
+            } else {
+                outData = new Sample[audio_input.shape(0) * paddedOutputSamples];
+
+                for (size_t i = 0; i < audio_input.shape(0); ++i) {
+                    std::copy(outputBuffer[i], outputBuffer[i] + paddedOutputSamples, outData + i * paddedOutputSamples);
+                }
+
+                outShape[0] = audio_input.shape(0);
+                outShape[1] = paddedOutputSamples;
+            }
+
+            // Delete 'outData' when the 'owner' capsule expires
+            nb::capsule owner(outData, [](void *p) noexcept {
+                delete[] static_cast<Sample*>(p);  // Properly cast the pointer before deletion
+            });
+
+            // Create the output ndarray
+            return nb::ndarray<nb::numpy, Sample, nb::ndim<2>>(outData, 2, outShape, owner);
+            }      
 };
 
 // Assuming Sample is 'float' for simplicity
 using Sample = float;
 
 NB_MODULE(SignalsmithStretch, m) {
-    nb::class_<signalsmith::stretch::SignalsmithStretch<Sample>>(m, "Stretch")
-    .def(nb::init<>())  // Default constructor
-    .def(nb::init<long>(), "seed"_a)  // Constructor with seed
-
-    .def("blockSamples", &signalsmith::stretch::SignalsmithStretch<Sample>::blockSamples)
-    .def("intervalSamples", &signalsmith::stretch::SignalsmithStretch<Sample>::intervalSamples)
-    .def("inputLatency", &signalsmith::stretch::SignalsmithStretch<Sample>::inputLatency)
-    .def("outputLatency", &signalsmith::stretch::SignalsmithStretch<Sample>::outputLatency)
-    .def("reset", &signalsmith::stretch::SignalsmithStretch<Sample>::reset)
-    .def("presetDefault", &signalsmith::stretch::SignalsmithStretch<Sample>::presetDefault)
-    .def("presetCheaper", &signalsmith::stretch::SignalsmithStretch<Sample>::presetCheaper)
-    .def("configure", &signalsmith::stretch::SignalsmithStretch<Sample>::configure)
-    ;
+    nb::class_<Stretch<Sample>>(m, "Stretch")
+        .def(nb::constructor<>())
+        .def(nb::constructor<long>(),
+            "seed"_a)
+        .def("blockSamples", &Stretch<Sample>::blockSamples)
+        .def("intervalSamples", &Stretch<Sample>::intervalSamples)
+        .def("inputLatency", &Stretch<Sample>::inputLatency)
+        .def("outputLatency", &Stretch<Sample>::outputLatency)
+        .def("reset", &Stretch<Sample>::reset)
+        .def("preset", &Stretch<Sample>::preset,
+            "nChannels"_a, "sampleRate"_a, "cheaper"_a=false, "exactLength"_a=false)
+        .def("configure", &Stretch<Sample>::configure,
+            "nChannels"_a, "blockSamples"_a, "intervalSamples"_a)
+        .def("setTransposeFactor", &Stretch<Sample>::setTransposeFactor,
+            "multiplier"_a, "tonalityLimit"_a=0)
+        .def("setTransposeSemitones", &Stretch<Sample>::setTransposeSemitones,
+            "semitones"_a, "tonalityLimit"_a=0)
+        .def("setFreqMap", &Stretch<Sample>::setFreqMap,
+            "inputToOutput"_a)
+        .def("process", &Stretch<Sample>::process,
+            "audio_input"_a);
 }
