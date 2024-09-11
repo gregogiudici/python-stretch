@@ -8,7 +8,7 @@ using namespace nb::literals;
 
 
 // Buffer class for reading audio, with offset reading
-// (Buffer class is based on Wav class used in https://github.com/Signalsmith-Audio/signalsmith-stretch/blob/example-cmd/cmd/util/wav.h)
+// (Buffer class is based on "Wav" class used in https://github.com/Signalsmith-Audio/signalsmith-stretch/blob/example-cmd/cmd/util/wav.h)
 template<typename Sample=float>
 class Buffer{
     private:
@@ -67,9 +67,9 @@ struct Stretch{
         Stretch(long seed) : stretch_(seed) {}
 
         // === Configuration ===
-        bool exactLength_ = false;
+        bool exactLength_ = true;
         Sample sampleRate_;
-        Sample timeFactor_;
+        Sample timeFactor_ = 1;
 
         // === Getters === 
         int blockSamples() const {
