@@ -62,12 +62,14 @@ template<typename Sample=float>
 struct Stretch{
     private:
         signalsmith::stretch::SignalsmithStretch<Sample> stretch_;
-        Sample timeFactor_;
-        Sample sampleRate_;
-        Sample exactLength_ = false;
     public:
         Stretch() : stretch_() {}
         Stretch(long seed) : stretch_(seed) {}
+
+        // === Configuration ===
+        bool exactLength_ = false;
+        Sample sampleRate_;
+        Sample timeFactor_;
 
         // === Getters === 
         int blockSamples() const {
@@ -203,13 +205,18 @@ using Sample = float;
 
 NB_MODULE(SignalsmithStretch, m) {
     nb::class_<Stretch<Sample>>(m, "Stretch")
-        .def(nb::constructor<>())
-        .def(nb::constructor<long>(),
-            "seed"_a)
+        .def(nb::init<>())
+        .def(nb::init<long>(), "seed"_a)
+        // Getters
         .def("blockSamples", &Stretch<Sample>::blockSamples)
         .def("intervalSamples", &Stretch<Sample>::intervalSamples)
         .def("inputLatency", &Stretch<Sample>::inputLatency)
         .def("outputLatency", &Stretch<Sample>::outputLatency)
+        // Access to timeFactor_, sampleRate_, exactLength_
+        .def_rw("timeFactor", &Stretch<Sample>::timeFactor_)
+        .def_rw("sampleRate", &Stretch<Sample>::sampleRate_)
+        .def_rw("exactLength", &Stretch<Sample>::exactLength_)
+        // Settings
         .def("reset", &Stretch<Sample>::reset)
         .def("preset", &Stretch<Sample>::preset,
             "nChannels"_a, "sampleRate"_a, "cheaper"_a=false, "exactLength"_a=false)
@@ -221,6 +228,7 @@ NB_MODULE(SignalsmithStretch, m) {
             "semitones"_a, "tonalityLimit"_a=0)
         .def("setFreqMap", &Stretch<Sample>::setFreqMap,
             "inputToOutput"_a)
+        // Processing   
         .def("process", &Stretch<Sample>::process,
             "audio_input"_a);
 }
