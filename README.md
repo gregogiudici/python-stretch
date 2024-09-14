@@ -12,7 +12,7 @@
 [actions-wheels-link]:     https://github.com/gregogiudici/python-signalsmith-stretch/actions?query=workflow%3AWheels
 [actions-wheels-badge]:    https://github.com/gregogiudici/python-signalsmith-stretch/workflows/Wheels/badge.svg
 
-`pystretch` is a Python Wrapper the Signalsmith Stretch C++ library for pitch and time stretching.
+A simple Python Wrapper of the Signalsmith Stretch C++ library for pitch and time stretching.
 
 ## Features
 
