@@ -4,7 +4,7 @@
 [![Supported Platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Linux-green)](https://pypi.org/project/pystretch)
 [![PyPI - Wheel](https://img.shields.io/pypi/wheel/pystretch)](https://pypi.org/project/pystretch)
 [![Pip Action Status][actions-pip-badge]][actions-pip-link]
-[actions-wheels-badge]][actions-wheels-link]
+[![Pip Action Status][actions-wheels-badge]][actions-wheels-link]
 
 
 [actions-pip-link]:        https://github.com/gregogiudici/python-signalsmith-stretch/actions?query=workflow%3APip
