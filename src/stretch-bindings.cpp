@@ -67,9 +67,8 @@ struct Stretch{
         Stretch(long seed) : stretch_(seed) {}
 
         // === Configuration ===
-        bool exactLength_ = true;
         Sample sampleRate_;
-        Sample timeFactor_ = 1;
+        Sample timeFactor_ = 1.f;
 
         // === Getters === 
         int blockSamples() const {
@@ -91,14 +90,13 @@ struct Stretch{
         }
 
         // === Preset configuration ==
-        void preset(int nChannels, Sample sampleRate, bool cheaper = false, bool exactLength = false) {
+        void preset(int nChannels, Sample sampleRate, bool cheaper = false) {
             if (cheaper) {
                 stretch_.presetCheaper(nChannels, sampleRate);
             } else {
                 stretch_.presetDefault(nChannels, sampleRate);
             }
             sampleRate_ = sampleRate;
-            exactLength_ = exactLength;
         }
         // === Manual configuration ===
         void configure(int nChannels, int blockSamples, int intervalSamples) {
@@ -116,88 +114,106 @@ struct Stretch{
             stretch_.setFreqMap(inputToOutput);
         }
 
+
+        // ====================
+            // Simple stretch functioon
+        void simple_stretch_(const float* inputSignal, size_t inputSize, float* outputSignal, size_t outputSize) {
+            // Compress by linear interpolation
+            for (size_t i = 0; i < outputSize; ++i) {
+                // Compute the input index using multiplication (works for compression)
+                float inputIndex = (timeFactor_ > 0.f ) ? i / timeFactor_ : i * timeFactor_;
+                size_t idx1 = static_cast<size_t>(inputIndex);
+
+                // Ensure we don't go out of bounds
+                size_t idx2 = (idx1 + 1 < inputSize) ? idx1 + 1 : idx1;
+
+                // Linear interpolation between inputSignal[idx1] and inputSignal[idx2]
+                float fraction = inputIndex - idx1;
+                float interpolatedValue = (1.0f - fraction) * inputSignal[idx1] + fraction * inputSignal[idx2];
+
+                // Assign the interpolated value to the output signal
+                outputSignal[i] = interpolatedValue;
+            }
+        }
+        // ====================
+
         // === Processing ===
-        nb::ndarray<nb::numpy, Sample,nb::ndim<2>> process(nb::ndarray<nb::numpy, Sample,nb::ndim<2>> audio_input){
-            auto data = audio_input.data();
+        nb::ndarray<nb::numpy, float, nb::ndim<2>> process(nb::ndarray<nb::numpy, float, nb::ndim<2>> audio_input) {
+            auto inData = audio_input.data();
 
             if (audio_input.shape(0) > 2) {
                 throw std::runtime_error("Only mono or stereo audio is supported. The input should have shape (1,samples) or (2,samples).");
             }
 
+            size_t numChannels = audio_input.shape(0);
+            size_t inputLength  = audio_input.shape(1);
+            
             // Padding for latency
-            size_t paddedInputSamples = audio_input.shape(1) + stretch_.inputLatency();
-	        int tailSamples = exactLength_ ? stretch_.outputLatency() : (stretch_.outputLatency() + stretch_.inputLatency()); // if we don't need exact length, add a bit more output to catch any wobbles past the end
-            int outputSamples = std::round(audio_input.shape(1) * timeFactor_);
-            size_t paddedOutputSamples = outputSamples + tailSamples;
+            size_t paddedInputLength = inputLength  + stretch_.inputLatency();
+            int tailSamples = stretch_.outputLatency();
+            size_t outputLength  = std::round(inputLength / timeFactor_);
+            size_t paddedOutputLength = outputLength  + tailSamples;
 
-            // Create input buffer
-            Sample** inputBuffer = new Sample*[audio_input.shape(0)];
-            for (size_t i = 0; i < audio_input.shape(0); i++) {
-                inputBuffer[i] = new Sample[paddedInputSamples];
-                std::fill(inputBuffer[i], inputBuffer[i] + paddedInputSamples, 0);
+            // Allocate and initialize buffers
+            float** inputChannels = new float*[numChannels];
+            float** outputChannels = new float*[numChannels];
+            
+            for (size_t i = 0; i < numChannels; ++i) {
+                inputChannels[i] = new float[paddedInputLength]();
+                outputChannels[i] = new float[paddedOutputLength]();
             }
 
-            // Copy input data to input buffer[channel]
-            for (size_t i = 0; i < audio_input.shape(0); i++) {
-                std::copy(data + i*audio_input.shape(1), data + (i+1)*audio_input.shape(1), inputBuffer[i]);
+            // Copy input audio to input_data
+            for (size_t i = 0; i < numChannels; ++i) {
+                std::copy(inData + i*inputLength  , inData + (i+1)*inputLength  , inputChannels[i]);
             }
 
-            // Create output buffer
-            Sample** outputBuffer = new Sample*[audio_input.shape(0)];
-            for (size_t i = 0; i < audio_input.shape(0); i++) {
-                outputBuffer[i] = new Sample[paddedOutputSamples];
-                std::fill(outputBuffer[i], outputBuffer[i] + paddedOutputSamples, 0);
-            }
+            // Wrap input/output buffer with Buffer class (for offset reading/writing)
+            Buffer<float> inBuffer(inputChannels, paddedInputLength);
+            Buffer<float> outBuffer(outputChannels, outputLength);
 
-            // Wrap input/output buffer
-            Buffer<Sample> inBuffer(inputBuffer, paddedInputSamples);
-            Buffer<Sample> outBuffer(outputBuffer, outputSamples);
+            // Seek to the beginning of the input buffer
+            stretch_.seek(inBuffer, stretch_.inputLatency(), timeFactor_);
 
-            // Set offset of inBuffer. This is the latency of the stretch processor
+            // Set offset of inBuffer
             inBuffer.setOffset(stretch_.inputLatency());
 
             // PROCESSING
-            stretch_.process(inBuffer, audio_input.shape(1), outBuffer, outputSamples);
+            stretch_.process(inBuffer, inputLength, outBuffer, outputLength);
 
             // Read the last bit of output without providing any further input
-            outBuffer.setOffset(outputSamples);
-            stretch_.flush(outputBuffer, tailSamples);
-            outBuffer.setOffset(0);
+            outBuffer.setOffset(outputLength);
+            stretch_.flush(outBuffer, tailSamples);
+            // outBuffer.setOffset(tailSamples);
 
-            // Allocate output data buffer and shape outside the conditional
-            Sample* outData = nullptr;
-            size_t outShape[2];
+            // Prepare output data
+            size_t outShape[2] = {numChannels, outputLength };
+            float* outData = new float[numChannels * outShape[1]];
 
-            // Decide the size of `outData` and `outShape` based on `exactLength_`
-            if (exactLength_) {
-                outData = new Sample[audio_input.shape(0) * outputSamples];
-
-                for (size_t i = 0; i < audio_input.shape(0); ++i) {
-                    std::copy(outputBuffer[i], outputBuffer[i] + outputSamples, outData + i * outputSamples);
-                }
-
-                outShape[0] = audio_input.shape(0);
-                outShape[1] = outputSamples;
-                
-            } else {
-                outData = new Sample[audio_input.shape(0) * paddedOutputSamples];
-
-                for (size_t i = 0; i < audio_input.shape(0); ++i) {
-                    std::copy(outputBuffer[i], outputBuffer[i] + paddedOutputSamples, outData + i * paddedOutputSamples);
-                }
-
-                outShape[0] = audio_input.shape(0);
-                outShape[1] = paddedOutputSamples;
+            // Copy data from outputChannels to outData
+            for (size_t i = 0; i < numChannels; ++i) {
+                std::copy(outputChannels[i] + tailSamples, outputChannels[i] + paddedOutputLength , outData + i * outputLength );
             }
+
+            // Reset the stretch processor or we will get an error: free() invalid pointer
+            stretch_.reset();
+
+            // Clean up
+            for (size_t i = 0; i < numChannels; ++i) {
+                delete[] inputChannels[i];
+                delete[] outputChannels[i];
+            }
+            delete[] inputChannels;
+            delete[] outputChannels;
 
             // Delete 'outData' when the 'owner' capsule expires
             nb::capsule owner(outData, [](void *p) noexcept {
-                delete[] static_cast<Sample*>(p);  // Properly cast the pointer before deletion
+                delete[] static_cast<float*>(p);
             });
 
             // Create the output ndarray
-            return nb::ndarray<nb::numpy, Sample, nb::ndim<2>>(outData, 2, outShape, owner);
-            }      
+            return nb::ndarray<nb::numpy, float, nb::ndim<2>>(outData, 2, outShape, owner);
+        }
 };
 
 // Assuming Sample is 'float' for simplicity
@@ -215,11 +231,10 @@ NB_MODULE(SignalsmithStretch, m) {
         // Access to timeFactor_, sampleRate_, exactLength_
         .def_rw("timeFactor", &Stretch<Sample>::timeFactor_)
         .def_rw("sampleRate", &Stretch<Sample>::sampleRate_)
-        .def_rw("exactLength", &Stretch<Sample>::exactLength_)
         // Settings
         .def("reset", &Stretch<Sample>::reset)
         .def("preset", &Stretch<Sample>::preset,
-            "nChannels"_a, "sampleRate"_a, "cheaper"_a=false, "exactLength"_a=false)
+            "nChannels"_a, "sampleRate"_a, "cheaper"_a=false)
         .def("configure", &Stretch<Sample>::configure,
             "nChannels"_a, "blockSamples"_a, "intervalSamples"_a)
         .def("setTransposeFactor", &Stretch<Sample>::setTransposeFactor,
