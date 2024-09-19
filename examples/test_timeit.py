@@ -1,6 +1,6 @@
 import numpy as np
 import timeit
-import pystretch
+import python_stretch as pystretch
 import librosa
 
 def test_1():

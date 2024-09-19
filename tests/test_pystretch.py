@@ -1,4 +1,4 @@
-import pystretch as m
+import python_stretch as m
 import numpy as np
 
 def test_double_length():

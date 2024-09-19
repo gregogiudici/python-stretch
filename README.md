@@ -1,4 +1,4 @@
-# pystretch: pitch shifting and time stretching
+# python-stretch: pitch shifting and time stretching
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/gregogiudici/python-stretch/blob/main/LICENSE)
 [![Supported Platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Linux-green)](https://pypi.org/project/python-stretch)
 [![Pip Action Status][actions-pip-badge]][actions-pip-link]
@@ -24,7 +24,7 @@ A simple Python Wrapper of the Signalsmith Stretch C++ library for pitch and tim
 
 ## Installation
 
-`pystretch` is available via PyPI (via [Platform Wheels](https://packaging.python.org/guides/distributing-packages-using-setuptools/#platform-wheels)):
+`python-stretch` is available via PyPI (via [Platform Wheels](https://packaging.python.org/guides/distributing-packages-using-setuptools/#platform-wheels)):
 ```
 pip install python-stretch
 ```
@@ -41,7 +41,7 @@ pip install ./python-stretch
 ```
 import numpy as np
 import librosa
-import pystretch
+import python_stretch as ps
 
 # Load an audio example from librosa (e.g., 'trumpet', 'brahms',...)
 audio, sr = librosa.load(librosa.ex('trumpet'), sr=None)
@@ -51,16 +51,16 @@ if (audio.shape == 1):
     audio = audio[np.newaxis, :]
 
 # Create a Stretch object
-ps = pystretch.Signalsmith.Stretch()
+s = ps.Signalsmith.Stretch()
 # Configure using a preset
-ps.preset(audio.shape(0), sr) # numChannels, sampleRate
+s.preset(audio.shape(0), sr) # numChannels, sampleRate
 # Shift pitch 1 octave up
-ps.setTransposeSemitones(12)
+s.setTransposeSemitones(12)
 # Double audio duration
-ps.timeFactor = 0.5
+s.timeFactor = 0.5
 
 # Process
-audio_processed = ps.process(audio)
+audio_processed = s.process(audio)
 
 # Save and listen
 import soundfile as sf

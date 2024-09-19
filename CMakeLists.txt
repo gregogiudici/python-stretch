@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15...3.26)
 
-project(pystretch LANGUAGES CXX)
+project(python_stretch LANGUAGES CXX)
 
 if (NOT SKBUILD)
   message(WARNING "
@@ -66,5 +66,6 @@ nanobind_add_module(
   src/signalsmith-bindings.cpp
 )
 
+
 # Install directive for scikit-build-core
-install(TARGETS Signalsmith LIBRARY DESTINATION pystretch)
+install(TARGETS Signalsmith LIBRARY DESTINATION python_stretch)
