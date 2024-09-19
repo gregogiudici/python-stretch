@@ -1,10 +1,10 @@
-# pystretch: pitch shifting and time stretching
+# python-stretch: pitch shifting and time stretching
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/gregogiudici/python-stretch/blob/main/LICENSE)
-[![Supported Platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Linux-green)](https://pypi.org/project/pystretch)
+[![Supported Platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Linux-green)](https://pypi.org/project/python-stretch)
 [![Pip Action Status][actions-pip-badge]][actions-pip-link]
 [![Pip Action Status][actions-wheels-badge]][actions-wheels-link]
-<!-- [![PyPI - Wheel](https://img.shields.io/pypi/wheel/pystretch)](https://pypi.org/project/pystretch) -->
-<!-- [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pystretch)](https://pypi.org/project/pystretch) -->
+<!-- [![PyPI - Wheel](https://img.shields.io/pypi/wheel/python-stretch)](https://pypi.org/project/python-stretch) -->
+<!-- [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/python-stretch)](https://pypi.org/project/python-stretch) -->
 
 
 [actions-pip-link]:        https://github.com/gregogiudici/python-stretch/actions?query=workflow%3APip
@@ -24,9 +24,9 @@ A simple Python Wrapper of the Signalsmith Stretch C++ library for pitch and tim
 
 ## Installation
 
-`pystretch` is available via PyPI (via [Platform Wheels](https://packaging.python.org/guides/distributing-packages-using-setuptools/#platform-wheels)):
+`python-stretch` is available via PyPI (via [Platform Wheels](https://packaging.python.org/guides/distributing-packages-using-setuptools/#platform-wheels)):
 ```
-pip install pystretch
+pip install python-stretch
 ```
 Alternatevly, you can easly build it from source:
 ```
@@ -41,7 +41,7 @@ pip install ./python-stretch
 ```
 import numpy as np
 import librosa
-import pystretch
+import python-stretch
 
 # Load an audio example from librosa (e.g., 'trumpet', 'brahms',...)
 audio, sr = librosa.load(librosa.ex('trumpet'), sr=None)
@@ -51,7 +51,7 @@ if (audio.shape == 1):
     audio = audio[np.newaxis, :]
 
 # Create a Stretch object
-ps = pystretch.Signalsmith.Stretch()
+ps = python-stretch.Signalsmith.Stretch()
 # Configure using a preset
 ps.preset(audio.shape(0), sr) # numChannels, sampleRate
 # Shift pitch 1 octave up
@@ -69,5 +69,5 @@ sf.write("audio_processed.wav", np.squeeze(audio_processed), sr)
 ```
 
 # Acknowledgements
-- [Signalsmith Stretch](https://github.com/Signalsmith-Audio/signalsmith-stretch): `pystretch` is built on top of the Signalsmith Stretch C++ library, which provides the core algorithms for time stretching and pitch shifting.
+- [Signalsmith Stretch](https://github.com/Signalsmith-Audio/signalsmith-stretch): `python-stretch` is built on top of the Signalsmith Stretch C++ library, which provides the core algorithms for time stretching and pitch shifting.
 - [nanobind](https://github.com/wjakob/nanobind): This project utilizes nanobind for easily binding the C++ code to Python.

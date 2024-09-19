@@ -3,7 +3,7 @@ requires = ["scikit-build-core >=0.10", "nanobind >=2.0.0"]
 build-backend = "scikit_build_core.build"
 
 [project]
-name = "python-stretch"
+name = "pystretch"
 version = "0.0.1"
 description = "A Python Wrapprer of the Signalsmith Stretch C++ library for pitch and time stretching"
 readme = "README.md"
