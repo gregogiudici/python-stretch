@@ -125,6 +125,9 @@ struct Stretch{
             stretch_.setFreqMap(inputToOutput);
         }
 
+        void setTimeFactor(Sample timeFactor) {
+            timeFactor_ = timeFactor;
+        }
 
         // ====================
             // Simple stretch functioon
@@ -258,6 +261,8 @@ NB_MODULE(Signalsmith, m) {
             "semitones"_a, "tonalityLimit"_a=0)
         .def("setFreqMap", &Stretch<Sample>::setFreqMap,
             "inputToOutput"_a)
+        .def("setTimeFactor", &Stretch<Sample>::setTimeFactor,
+            "timeFactor"_a)
         // Processing   
         .def("process", &Stretch<Sample>::process,
             "audio_input"_a);
