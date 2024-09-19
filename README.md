@@ -1,5 +1,5 @@
 # pystretch: pitch shifting and time stretching
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/gregogiudici/python-signalsmith-stretch/blob/main/LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/gregogiudici/python-stretch/blob/main/LICENSE)
 [![Supported Platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Linux-green)](https://pypi.org/project/pystretch)
 [![Pip Action Status][actions-pip-badge]][actions-pip-link]
 [![Pip Action Status][actions-wheels-badge]][actions-wheels-link]
@@ -7,10 +7,10 @@
 <!-- [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pystretch)](https://pypi.org/project/pystretch) -->
 
 
-[actions-pip-link]:        https://github.com/gregogiudici/python-signalsmith-stretch/actions?query=workflow%3APip
-[actions-pip-badge]:       https://github.com/gregogiudici/python-signalsmith-stretch/workflows/Pip/badge.svg
-[actions-wheels-link]:     https://github.com/gregogiudici/python-signalsmith-stretch/actions?query=workflow%3AWheels
-[actions-wheels-badge]:    https://github.com/gregogiudici/python-signalsmith-stretch/workflows/Wheels/badge.svg
+[actions-pip-link]:        https://github.com/gregogiudici/python-stretch/actions?query=workflow%3APip
+[actions-pip-badge]:       https://github.com/gregogiudici/python-stretch/workflows/Pip/badge.svg
+[actions-wheels-link]:     https://github.com/gregogiudici/python-stretch/actions?query=workflow%3AWheels
+[actions-wheels-badge]:    https://github.com/gregogiudici/python-stretch/workflows/Wheels/badge.svg
 
 A simple Python Wrapper of the Signalsmith Stretch C++ library for pitch and time stretching.
 

@@ -52,7 +52,6 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-
     - name: Build Wheels
       uses: pypa/cibuildwheel@v2.19
       with:

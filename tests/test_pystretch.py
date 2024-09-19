@@ -5,7 +5,7 @@ def test_double_length():
     x1 = np.random.rand(1,44100)
     x2 = np.random.rand(1,22050)
     ps = m.Signalsmith.Stretch()
-    assert ps.timeFactor == 1.
+    assert ps.timeFactor == 1
     ps.timeFactor = 0.5
     y1 = ps.process(x1) 
     y2 = ps.process(x2)

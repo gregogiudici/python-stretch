@@ -62,13 +62,24 @@ template<typename Sample=float>
 struct Stretch{
     private:
         signalsmith::stretch::SignalsmithStretch<Sample> stretch_;
+        Sample sampleRate_;
+        Sample timeFactor_ = 1.f;
+        Sample freqMultiplier_ = 1.f;
+        Sample freqSemitones_ = 0.f;
     public:
         Stretch() : stretch_() {}
         Stretch(long seed) : stretch_(seed) {}
 
-        // === Configuration ===
-        Sample sampleRate_;
-        Sample timeFactor_ = 1.f;
+
+        // === Access to private members ===
+        void set_sr(Sample value) { sampleRate_ = value; }
+        Sample sampleRate() const { return sampleRate_;}
+        void set_tf(Sample value) { timeFactor_ = value; }
+        Sample timeFactor() const { return timeFactor_; }
+        void set_fm(Sample value) { freqMultiplier_ = value; }
+        Sample freqMultiplier() const { return freqMultiplier_; }
+        void set_fs(Sample value) { freqSemitones_ = value; }
+        Sample freqSemitones() const { return freqSemitones_; } 
 
         // === Getters === 
         int blockSamples() const {
@@ -229,8 +240,12 @@ NB_MODULE(Signalsmith, m) {
         .def("inputLatency", &Stretch<Sample>::inputLatency)
         .def("outputLatency", &Stretch<Sample>::outputLatency)
         // Access to timeFactor_, sampleRate_, exactLength_
-        .def_rw("timeFactor", &Stretch<Sample>::timeFactor_)
-        .def_rw("sampleRate", &Stretch<Sample>::sampleRate_)
+        .def_prop_rw("sampleRate", 
+            [](Stretch<Sample> &t) { return t.sampleRate() ; },
+            [](Stretch<Sample> &t, Sample value) { t.set_sr(value); })
+        .def_prop_rw("timeFactor", 
+            [](Stretch<Sample> &t) { return t.timeFactor() ; },
+            [](Stretch<Sample> &t, Sample value) { t.set_tf(value); })
         // Settings
         .def("reset", &Stretch<Sample>::reset)
         .def("preset", &Stretch<Sample>::preset,
