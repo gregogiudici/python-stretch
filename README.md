@@ -47,17 +47,17 @@ import python_stretch as ps
 audio, sr = librosa.load(librosa.ex('trumpet'), sr=None)
 
 # Assure that "audio" is a 2d array
-if (audio.shape == 1):
+if (audio.ndim == 1):
     audio = audio[np.newaxis, :]
 
 # Create a Stretch object
 s = ps.Signalsmith.Stretch()
 # Configure using a preset
-s.preset(audio.shape(0), sr) # numChannels, sampleRate
-# Shift pitch 1 octave up
+s.preset(audio.shape[0], sr) # numChannels, sampleRate
+# Shift up by one octave
 s.setTransposeSemitones(12)
-# Double audio duration
-s.timeFactor = 0.5
+# Speed up by 25%
+s.timeFactor = 0.75
 
 # Process
 audio_processed = s.process(audio)
