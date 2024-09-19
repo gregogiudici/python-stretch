@@ -7,7 +7,7 @@ name = "pystretch"
 version = "0.0.1"
 description = "A Python Wrapprer of the Signalsmith Stretch C++ library for pitch and time stretching"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 authors = [
     { name = "Gregorio Andrea Giudici", email = "greg.giudici96@gmail.com" },
 ]
