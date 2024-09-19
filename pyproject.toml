@@ -3,7 +3,7 @@ requires = ["scikit-build-core >=0.10", "nanobind >=2.0.0"]
 build-backend = "scikit_build_core.build"
 
 [project]
-name = "pystretch"
+name = "python-stretch"
 version = "0.0.1"
 description = "A Python Wrapprer of the Signalsmith Stretch C++ library for pitch and time stretching"
 readme = "README.md"
@@ -40,7 +40,7 @@ test-requires = ["pytest", "numpy"]
 # Don't test Python 3.8 wheels on macOS/arm64
 # test-skip="cp38-macosx_*:arm64"
 # Don't test Python 3.9 wheels on manylinux_i686
-test-skip="pp39-manylinux_i686"
+test-skip="pp*-manylinux_i686"
 
 # Needed for full C++17 support
 [tool.cibuildwheel.macos.environment]
