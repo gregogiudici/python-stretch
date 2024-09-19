@@ -44,11 +44,24 @@ jobs:
       with:
         submodules: true
 
+    - name: Set up Python
+    uses: actions/setup-python@v5
+    with:
+      python-version: 3.x  # Adjust Python version as needed
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest numpy librosa  # Add numpy and other dependencies
+
     - uses: pypa/cibuildwheel@v2.19
 
     - name: Verify clean directory
       run: git diff --exit-code
       shell: bash
+
+    - name: Run tests
+      run: pytest  # Ensure pytest runs here after installing the dependencies
 
     - name: Upload wheels
       uses: actions/upload-artifact@v4
