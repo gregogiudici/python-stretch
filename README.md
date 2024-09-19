@@ -1,10 +1,10 @@
 # pystretch: pitch shifting and time stretching
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/gregogiudici/python-signalsmith-stretch/blob/main/LICENSE)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pystretch)](https://pypi.org/project/pystretch)
 [![Supported Platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Linux-green)](https://pypi.org/project/pystretch)
-[![PyPI - Wheel](https://img.shields.io/pypi/wheel/pystretch)](https://pypi.org/project/pystretch)
 [![Pip Action Status][actions-pip-badge]][actions-pip-link]
 [![Pip Action Status][actions-wheels-badge]][actions-wheels-link]
+<!-- [![PyPI - Wheel](https://img.shields.io/pypi/wheel/pystretch)](https://pypi.org/project/pystretch) -->
+<!-- [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pystretch)](https://pypi.org/project/pystretch) -->
 
 
 [actions-pip-link]:        https://github.com/gregogiudici/python-signalsmith-stretch/actions?query=workflow%3APip
@@ -31,9 +31,9 @@ pip install pystretch
 Alternatevly, you can easly build it from source:
 ```
 # Clone from github
-git clone https://github.com/gregogiudici/python-signalsmith-stretch.git
+git clone --recurse-submodules https://github.com/gregogiudici/python-stretch.git
 # Install
-pip install ./python-signalsmith-stretch
+pip install ./python-stretch
 ```
 
 # Examples
@@ -51,7 +51,7 @@ if (audio.shape == 1):
     audio = audio[np.newaxis, :]
 
 # Create a Stretch object
-ps = pystretch.SignalsmithStretch.Stretch()
+ps = pystretch.Signalsmith.Stretch()
 # Configure using a preset
 ps.preset(audio.shape(0), sr) # numChannels, sampleRate
 # Shift pitch 1 octave up
