@@ -4,7 +4,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "python-stretch"
-version = "0.0.1"
+version = "0.1.0"
 description = "A Python Wrapprer of the Signalsmith Stretch C++ library for pitch and time stretching"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -13,6 +13,9 @@ authors = [
 ]
 classifiers = [
     "License :: OSI Approved :: MIT License",
+    "Programming Language :: C++",
+    "Programming Language :: Python",
+    "Topic :: Multimedia :: Sound/Audio",
 ]
 
 [project.urls]
