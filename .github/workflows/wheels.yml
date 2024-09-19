@@ -52,10 +52,6 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pytest numpy librosa
 
     - name: Build Wheels
       uses: pypa/cibuildwheel@v2.19
@@ -65,6 +61,12 @@ jobs:
     - name: Verify clean directory
       run: git diff --exit-code
       shell: bash
+
+     # Install the wheel and test dependencie
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest numpy librosa
 
     - name: Run tests
       run: pytest  # Run tests after building the wheels
