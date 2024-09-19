@@ -9,7 +9,7 @@ def test_1():
     y = y[np.newaxis,:]
 
     # Create the pystretch object
-    ps = pystretch.SignalsmithStretch.Stretch()
+    ps = pystretch.Signalsmith.Stretch()
     ps.preset(1,sr)
 
     # Time the stretch function
@@ -19,7 +19,7 @@ def test_1():
 def test_2():
 
     def test_stretch():
-        ps = pystretch.SignalsmithStretch.Stretch()
+        ps = pystretch.Signalsmith.Stretch()
         ps.preset(1,sr)
 
         # Time the stretch function

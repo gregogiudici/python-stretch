@@ -219,7 +219,7 @@ struct Stretch{
 // Assuming Sample is 'float' for simplicity
 using Sample = float;
 
-NB_MODULE(SignalsmithStretch, m) {
+NB_MODULE(Signalsmith, m) {
     nb::class_<Stretch<Sample>>(m, "Stretch")
         .def(nb::init<>())
         .def(nb::init<long>(), "seed"_a)

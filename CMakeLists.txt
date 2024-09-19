@@ -47,7 +47,7 @@ include_directories(include ${CMAKE_CURRENT_SOURCE_DIR}/include)
 # We are now ready to compile the actual extension module
 nanobind_add_module(
   # Name of the extension
-  SignalsmithStretch
+  Signalsmith
 
   # Target the stable ABI for Python 3.12+, which reduces
   # the number of binary wheels that must be built. This
@@ -63,8 +63,8 @@ nanobind_add_module(
   NB_STATIC
 
   # Source code goes here
-  src/stretch-bindings.cpp
+  src/signalsmith-bindings.cpp
 )
 
 # Install directive for scikit-build-core
-install(TARGETS SignalsmithStretch LIBRARY DESTINATION pystretch)
+install(TARGETS Signalsmith LIBRARY DESTINATION pystretch)
