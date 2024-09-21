@@ -83,8 +83,10 @@ jobs:
     - name: List File in dist
       run: ls -l dist
 
-    - name: List File in dist/dist
-      run: ls -l dist/dist/
+    # Move all the wheel and tar.gz files to the main dist/ folder
+    - name: Move wheels to dist/
+      run: |
+        mv dist/dist/* dist/
 
     - uses: pypa/gh-action-pypi-publish@release/v1
       with:
