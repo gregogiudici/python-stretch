@@ -83,6 +83,9 @@ jobs:
     - name: List File in dist
       run: ls -l dist
 
+    - name: List File in dist/dist
+      run: ls -l dist/dist/
+
     - uses: pypa/gh-action-pypi-publish@release/v1
       with:
         user: __token__
