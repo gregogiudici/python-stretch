@@ -5,7 +5,7 @@ on:
   pull_request:
   push:
     branches:
-     - main
+     - master
   release:
     types:
       - published
@@ -79,9 +79,6 @@ jobs:
     - uses: actions/download-artifact@v4
       with:
         path: dist
-
-    - name: List dist files
-      run: ls dist/
 
     - uses: pypa/gh-action-pypi-publish@release/v1
       with:
