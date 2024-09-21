@@ -80,6 +80,9 @@ jobs:
       with:
         path: dist
 
+    - name: List File in dist
+      run: ls -l dist
+
     - uses: pypa/gh-action-pypi-publish@release/v1
       with:
         user: __token__
