@@ -78,11 +78,10 @@ jobs:
 
     - uses: actions/download-artifact@v4
       with:
-        name: wheels
-        path: ./dist
+        path: dist
 
     - name: List dist files
-      run: ls ./dist
+      run: ls dist/
 
     - uses: pypa/gh-action-pypi-publish@release/v1
       with:
