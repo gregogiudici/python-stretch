@@ -28,7 +28,7 @@ A simple Python Wrapper of the Signalsmith Stretch C++ library for pitch and tim
 ```
 pip install python-stretch
 ```
-Alternatevly, you can easly build it from source:
+Alternatevly, you can easly build it from source (You need a c++ compiler and cmake).
 ```
 # Clone from github
 git clone --recurse-submodules https://github.com/gregogiudici/python-stretch.git
@@ -51,16 +51,16 @@ if (audio.ndim == 1):
     audio = audio[np.newaxis, :]
 
 # Create a Stretch object
-s = ps.Signalsmith.Stretch()
+stretch = ps.Signalsmith.Stretch()
 # Configure using a preset
-s.preset(audio.shape[0], sr) # numChannels, sampleRate
+stretch.preset(audio.shape[0], sr) # numChannels, sampleRate
 # Shift up by one octave
-s.setTransposeSemitones(12)
-# Speed up by 25%
-s.timeFactor = 0.75
+stretch.setTransposeSemitones(12)
+# Stretch time
+stretch.timeFactor = 0.75
 
 # Process
-audio_processed = s.process(audio)
+audio_processed = stretch.process(audio)
 
 # Save and listen
 import soundfile as sf
