@@ -130,7 +130,7 @@ struct Stretch{
         }
 
         // ====================
-            // Simple stretch functioon
+            // Simple stretch function
         void simple_stretch_(const float* inputSignal, size_t inputSize, float* outputSignal, size_t outputSize) {
             // Compress by linear interpolation
             for (size_t i = 0; i < outputSize; ++i) {
@@ -242,7 +242,7 @@ NB_MODULE(Signalsmith, m) {
         .def("intervalSamples", &Stretch<Sample>::intervalSamples)
         .def("inputLatency", &Stretch<Sample>::inputLatency)
         .def("outputLatency", &Stretch<Sample>::outputLatency)
-        // Access to timeFactor_, sampleRate_, exactLength_
+        // Access to timeFactor_, sampleRate_
         .def_prop_rw("sampleRate", 
             [](Stretch<Sample> &t) { return t.sampleRate() ; },
             [](Stretch<Sample> &t, Sample value) { t.set_sr(value); })

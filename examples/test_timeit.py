@@ -11,16 +11,18 @@ def test_1():
     # Create the pystretch object
     ps = pystretch.Signalsmith.Stretch()
     ps.preset(1,sr)
+    ps.setTransposeSemitones(12)
 
     # Time the stretch function
-    t = timeit.timeit(lambda: ps.process(y), number=2)
-    print('Stretch time: %f' % t)
+    t = timeit.timeit(lambda: ps.process(y), number=10)
+    print('Test 1 (transpose): %f' % t)
 
 def test_2():
 
     def test_stretch():
         ps = pystretch.Signalsmith.Stretch()
         ps.preset(1,sr)
+        ps.timeFactor = 2.0
 
         # Time the stretch function
         ps.process(y)
@@ -31,7 +33,8 @@ def test_2():
 
     # Time the stretch function
     t = timeit.timeit(test_stretch, number=10)
-    print('Stretch time: %f' % t)
+    print('Test 2 (stretch): %f' % t)
 
 if __name__ == '__main__':
     test_1()
+    test_2()
