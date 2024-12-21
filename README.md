@@ -24,7 +24,7 @@ A simple Python Wrapper of the Signalsmith Stretch C++ library for pitch and tim
 
 ## Installation
 
-`python-stretch` is available via PyPI (via [Platform Wheels](https://packaging.python.org/guides/distributing-packages-using-setuptools/#platform-wheels)):
+`python-stretch` is available in [PyPI](https://pypi.org/project/python-stretch/) (via [Platform Wheels](https://packaging.python.org/guides/distributing-packages-using-setuptools/#platform-wheels)):
 ```
 pip install python-stretch
 ```
