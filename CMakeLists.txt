@@ -25,13 +25,10 @@ if (NOT SKBUILD)
   after editing C++ files.")
 endif()
 
-# if(NOT CMAKE_BUILD_TYPE)
-#   set(CMAKE_BUILD_TYPE Release)
-# endif()
-
-# set(CMAKE_CXX_FLAGS "-Wall -Wextra")
-# set(CMAKE_CXX_FLAGS_DEBUG "-g")
-# set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+# Set default build type to Release if not specified
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
 
 # Try to import all Python components potentially needed by nanobind
 find_package(Python 3.8
@@ -66,6 +63,34 @@ nanobind_add_module(
   src/signalsmith-bindings.cpp
 )
 
+# Optimize Signalsmith library
+if (MSVC)
+    target_compile_options(Signalsmith PRIVATE /O2 /fp:fast)
+    target_link_options(Signalsmith PRIVATE /GL /LTCG)
+else()
+  if(NOT APPLE)
+    target_compile_options(Signalsmith PRIVATE -O3 -ffast-math)
+  else()
+    target_compile_options(Signalsmith PRIVATE -O3)
+  endif()
+  target_link_options(Signalsmith PRIVATE -flto)
+endif()
+
+
+# Create a stub file for type hints
+nanobind_add_stub(
+  Signalsmith_stub
+  MODULE Signalsmith
+  OUTPUT Signalsmith.pyi
+  MARKER_FILE py.typed
+  PYTHON_PATH $<TARGET_FILE_DIR:Signalsmith>
+  DEPENDS Signalsmith
+)
+
 
 # Install directive for scikit-build-core
 install(TARGETS Signalsmith LIBRARY DESTINATION python_stretch)
+
+# Install stub files
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/py.typed ${CMAKE_CURRENT_BINARY_DIR}/Signalsmith.pyi DESTINATION python_stretch)
+
