@@ -35,6 +35,40 @@ def test_2():
     t = timeit.timeit(test_stretch, number=10)
     print('Test 2 (stretch): %f' % t)
 
+def test_multichannel():
+    y,sr = librosa.load('examples/les_bridge_fing01__00000.wav', sr=None, mono=False)
+    print('Original file',y.shape)
+    y = y[np.newaxis,:]
+    print('Original MONO file',y.shape)
+    
+    ps = pystretch.Signalsmith.Stretch()
+    ps.preset(y.shape[0],sr)
+    
+    # Process
+    y_1 = ps.process(y)
+    print('Stretched MONO',y_1.shape)
+    
+    # Copy the first channel to a second channel
+    y = np.concatenate((y,y),axis=0)
+    print('Original MONO file',y.shape)
+    
+    # Process
+    ps.preset(y.shape[0],sr)
+    ps.setTransposeSemitones(12)
+    y_2 = ps.process(y)
+    
+    print('Stretched STEREO',y_2.shape)
+    
+    # Copy the first two channels to other two channels
+    y = np.concatenate((y,y),axis=0)
+    print('Original Multichannel', y.shape)
+    
+    ps.preset(y.shape[0],sr)
+    y_3 = ps.process(y)
+    print('Stretched Multichannel',y_3.shape)
+    
+
 if __name__ == '__main__':
-    test_1()
-    test_2()
+    # test_1()
+    # test_2()
+    test_multichannel()
