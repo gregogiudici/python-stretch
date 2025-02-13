@@ -63,15 +63,28 @@ nanobind_add_module(
   src/signalsmith-bindings.cpp
 )
 
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  execute_process(
+    COMMAND ${CMAKE_CXX_COMPILER} --version
+    OUTPUT_VARIABLE CLANG_VERSION_OUTPUT
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+
+  string(REGEX MATCH "([0-9]+)\\.([0-9]+)\\.([0-9]+)" CLANG_VERSION_MATCH "${CLANG_VERSION_OUTPUT}")
+  set(CLANG_MAJOR_VERSION ${CMAKE_MATCH_1})
+  set(CLANG_MINOR_VERSION ${CMAKE_MATCH_2})
+  set(CLANG_PATCH_VERSION ${CMAKE_MATCH_3})
+endif()
+
 # Optimize Signalsmith library
 if (MSVC)
     target_compile_options(Signalsmith PRIVATE /O2 /fp:fast)
     target_link_options(Signalsmith PRIVATE /GL /LTCG)
 else()
-  if(NOT APPLE)
-    target_compile_options(Signalsmith PRIVATE -O3 -ffast-math)
+  if(APPLE AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CLANG_MAJOR_VERSION EQUAL 16 AND CLANG_MINOR_VERSION EQUAL 0 AND CLANG_PATCH_VERSION EQUAL 0)
+    target_compile_options(Signalsmith PRIVATE -O3)    
   else()
-    target_compile_options(Signalsmith PRIVATE -O3)
+    target_compile_options(Signalsmith PRIVATE -O3 -ffast-math)
   endif()
   target_link_options(Signalsmith PRIVATE -flto)
 endif()
