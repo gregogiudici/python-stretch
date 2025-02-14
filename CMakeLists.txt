@@ -89,21 +89,25 @@ else()
   target_link_options(Signalsmith PRIVATE -flto)
 endif()
 
-
-# Create a stub file for type hints
-nanobind_add_stub(
-  Signalsmith_stub
-  MODULE Signalsmith
-  OUTPUT Signalsmith.pyi
-  MARKER_FILE py.typed
-  PYTHON_PATH $<TARGET_FILE_DIR:Signalsmith>
-  DEPENDS Signalsmith
-)
+# Skip if we are building for apple AND python is greater than 3.8
+if((NOT APPLE) OR (Python_VERSION VERSION_GREATER "3.8"))
+  # Create a stub file for type hints
+  nanobind_add_stub(
+    Signalsmith_stub
+    MODULE Signalsmith
+    OUTPUT Signalsmith.pyi
+    MARKER_FILE py.typed
+    PYTHON_PATH $<TARGET_FILE_DIR:Signalsmith>
+    DEPENDS Signalsmith
+  )
+endif()
 
 
 # Install directive for scikit-build-core
 install(TARGETS Signalsmith LIBRARY DESTINATION python_stretch)
 
-# Install stub files
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/py.typed ${CMAKE_CURRENT_BINARY_DIR}/Signalsmith.pyi DESTINATION python_stretch)
+if((NOT APPLE) OR (Python_VERSION VERSION_GREATER "3.8"))
+  # Install stub files
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/py.typed ${CMAKE_CURRENT_BINARY_DIR}/Signalsmith.pyi DESTINATION python_stretch)
+endif()
 
