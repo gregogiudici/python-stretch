@@ -44,6 +44,9 @@ jobs:
       with:
         submodules: true
 
+    - name: Set CIBW_SKIP
+      run: echo "CIBW_SKIP=pp*" >> $GITHUB_ENV
+
     - uses: pypa/cibuildwheel@v2.19
 
     - name: Verify clean directory
