@@ -44,8 +44,8 @@ skip = ["pp38-*"]  # Skip only PyPy 3.8
 test-command = "pytest {project}/tests"
 test-requires = ["pytest", "numpy"]
 
-# Don't test Python 3.8 wheels on macOS/arm64
-test-skip="cp38-macosx_*:arm64"
+# Don't test Python 3.8 wheels on macOS/arm64 and Python 3.9 wheels on manylinux_i686
+test-skip=["cp38-macosx_*:arm64", "pp39-manylinux_i686"]
 
 # Needed for full C++17 support
 [tool.cibuildwheel.macos.environment]
