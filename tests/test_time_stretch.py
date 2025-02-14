@@ -2,8 +2,8 @@ import python_stretch as m
 import numpy as np
 
 def test_mono_double_length():
-    x1 = np.random.rand(1,44100)
-    x2 = np.random.rand(1,22050)
+    x1 = np.random.normal(0, 0.1, size=(1, 44100)).astype(np.float32)
+    x2 = np.random.normal(0, 0.1, size=(1, 22050)).astype(np.float32)
     
     ps = m.Signalsmith.Stretch()
     ps.setTimeFactor(0.5)
@@ -16,8 +16,8 @@ def test_mono_double_length():
     assert y2.shape == (1, 44100)
 
 def test_mono_half_length():
-    x1 = np.random.rand(1,44100)
-    x2 = np.random.rand(1,22050)
+    x1 = np.random.normal(0, 0.1, size=(1, 44100)).astype(np.float32)
+    x2 = np.random.normal(0, 0.1, size=(1, 22050)).astype(np.float32)
     
     ps = m.Signalsmith.Stretch()
     ps.setTimeFactor(2.)
@@ -30,8 +30,8 @@ def test_mono_half_length():
     assert y2.shape == (1, 11025)
     
 def test_stereo_double_length():
-    x1 = np.random.rand(2,44100)
-    x2 = np.random.rand(2,22050)
+    x1 = np.random.normal(0, 0.1, size=(2, 44100)).astype(np.float32)
+    x2 = np.random.normal(0, 0.1, size=(2, 22050)).astype(np.float32)
     
     ps = m.Signalsmith.Stretch()
     ps.setTimeFactor(0.5)
@@ -59,8 +59,8 @@ def test_stereo_half_length():
     
 def test_multichannel_double_length():
     n_channels = np.random.randint(3, 10)
-    x1 = np.random.rand(n_channels, 44100)
-    x2 = np.random.rand(n_channels, 22050)
+    x1 = np.random.normal(0, 0.1, size=(n_channels, 44100)).astype(np.float32)
+    x2 = np.random.normal(0, 0.1, size=(n_channels, 22050)).astype(np.float32)
     
     ps = m.Signalsmith.Stretch()
     ps.setTimeFactor(0.5)
@@ -74,8 +74,8 @@ def test_multichannel_double_length():
     
 def test_multichannel_half_length():
     n_channels = np.random.randint(3, 10)
-    x1 = np.random.rand(n_channels, 44100)
-    x2 = np.random.rand(n_channels, 22050)
+    x1 = np.random.normal(0, 0.1, size=(n_channels, 44100)).astype(np.float32)
+    x2 = np.random.normal(0, 0.1, size=(n_channels, 22050)).astype(np.float32)
     
     ps = m.Signalsmith.Stretch()
     ps.setTimeFactor(2.)
