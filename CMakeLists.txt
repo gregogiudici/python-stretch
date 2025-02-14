@@ -90,7 +90,7 @@ else()
 endif()
 
 # Skip if we are building for apple AND python is greater than 3.8
-if((NOT APPLE) OR (Python_VERSION VERSION_GREATER "3.8"))
+if((NOT APPLE) OR (Python_VERSION VERSION_GREATER_EQUAL "3.9"))
   # Create a stub file for type hints
   nanobind_add_stub(
     Signalsmith_stub
@@ -106,7 +106,7 @@ endif()
 # Install directive for scikit-build-core
 install(TARGETS Signalsmith LIBRARY DESTINATION python_stretch)
 
-if((NOT APPLE) OR (Python_VERSION VERSION_GREATER "3.8"))
+if((NOT APPLE) OR (Python_VERSION VERSION_GREATER_EQUAL "3.9"))
   # Install stub files
   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/py.typed ${CMAKE_CURRENT_BINARY_DIR}/Signalsmith.pyi DESTINATION python_stretch)
 endif()
