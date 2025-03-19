@@ -20,10 +20,10 @@ A simple Python Wrapper of the Signalsmith Stretch C++ library for pitch and tim
 
 ## Features
 
-- **Time stretching**
-- **Pitch shifting**
 - **Multichannel support**: Works with mono and multichannel audio files.
-- **Seamless integration**: Works natively with NumPy arrays for compatibility with libraries such as `librosa` and many others used in audio processing pipelines.
+- **Seamless integration**: Works natively with NumPy arrays for compatibility with libraries such as [`librosa`](https://librosa.org/doc/latest/index.html) and many others used in audio processing pipelines.
+- **Backend of Audiomentations**: `python-stretch` is used as the core method for pitch shifting and time stretching in the popular [`audiomentations`](https://github.com/iver56/audiomentations) library since version [0.39.0](https://iver56.github.io/audiomentations/changelog/#:~:text=Semantic%20Versioning.-,0.39.0%20%2D%202025%2D02%2D12,-Changed).
+
 
 
 ## Installation
@@ -74,4 +74,4 @@ sf.write("audio_processed.wav", np.squeeze(audio_processed), sr)
 
 # Acknowledgements
 - [Signalsmith Stretch](https://github.com/Signalsmith-Audio/signalsmith-stretch): `python-stretch` is built on top of the Signalsmith Stretch C++ library, which provides the core algorithms for time stretching and pitch shifting.
-- [nanobind](https://github.com/wjakob/nanobind): This project utilizes nanobind for easily binding the C++ code to Python.
+- [nanobind](https://github.com/wjakob/nanobind): This project utilizes `nanobind` for easily binding the C++ code to Python.
