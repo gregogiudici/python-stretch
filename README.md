@@ -1,10 +1,14 @@
-# python-stretch: pitch shifting and time stretching
+# ***python-stretch***: pitch shifting and time stretching
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/gregogiudici/python-stretch/blob/main/LICENSE)
 [![Supported Platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Linux-green)](https://pypi.org/project/python-stretch)
 [![Pip Action Status][actions-pip-badge]][actions-pip-link]
 [![Pip Action Status][actions-wheels-badge]][actions-wheels-link]
+[![PyPI Downloads](https://static.pepy.tech/badge/python-stretch)](https://pepy.tech/projects/python-stretch)
+
 <!-- [![PyPI - Wheel](https://img.shields.io/pypi/wheel/python-stretch)](https://pypi.org/project/python-stretch) -->
 <!-- [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/python-stretch)](https://pypi.org/project/python-stretch) -->
+<!-- [![PyPI Downloads](https://static.pepy.tech/badge/python-stretch)](https://pepy.tech/projects/python-stretch) -->
+
 
 
 [actions-pip-link]:        https://github.com/gregogiudici/python-stretch/actions?query=workflow%3APip
