@@ -29,11 +29,11 @@ A simple Python Wrapper of the Signalsmith Stretch C++ library for pitch and tim
 ## Installation
 
 `python-stretch` is available in [PyPI](https://pypi.org/project/python-stretch/) (via [Platform Wheels](https://packaging.python.org/guides/distributing-packages-using-setuptools/#platform-wheels)):
-```
+```bash
 pip install python-stretch
 ```
 Alternatevly, you can easly build it from source (You need a c++ compiler and cmake).
-```
+```bash
 # Clone from github
 git clone --recurse-submodules https://github.com/gregogiudici/python-stretch.git
 # Install
@@ -42,7 +42,7 @@ pip install ./python-stretch
 
 # Examples
 ## Quick Start
-```
+```py
 import numpy as np
 import librosa
 import python_stretch as ps
