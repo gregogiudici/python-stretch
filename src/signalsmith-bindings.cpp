@@ -181,31 +181,39 @@ struct Stretch{
             Buffer<float> inBuffer(inputChannels, paddedInputLength);
             Buffer<float> outBuffer(outputChannels, outputLength);
 
-            // Seek to the beginning of the input buffer
-            stretch_.seek(inBuffer, stretch_.inputLatency(), timeFactor_);
-
-            // Set offset of inBuffer
-            inBuffer.setOffset(stretch_.inputLatency());
-
-            // PROCESSING
-            stretch_.process(inBuffer, inputLength, outBuffer, outputLength);
-
-            // Read the last bit of output without providing any further input
-            outBuffer.setOffset(outputLength);
-            stretch_.flush(outBuffer, tailSamples);
-            // outBuffer.setOffset(tailSamples);
-
-            // Prepare output data
+            // Prepare output data (raw heap allocation — does not touch Python objects)
             size_t outShape[2] = {numChannels, outputLength };
             float* outData = new float[numChannels * outShape[1]];
 
-            // Copy from outputChannels to outData
-            for (size_t i = 0; i < numChannels; ++i) {
-                std::copy(outputChannels[i] + tailSamples, outputChannels[i] + paddedOutputLength , outData + i * outputLength );
-            }
+            // === GIL-free section ===========================================
+            // The stretch computation is pure C++ on raw float buffers; no
+            // Python objects are touched, so the GIL can be released to give
+            // ThreadPoolExecutor parallelism a real speedup.
+            {
+                nb::gil_scoped_release release;
 
-            // REMEMBER: Reset the stretch processor or we will get an error: free() invalid pointer
-            stretch_.reset();
+                // Seek to the beginning of the input buffer
+                stretch_.seek(inBuffer, stretch_.inputLatency(), timeFactor_);
+
+                // Set offset of inBuffer
+                inBuffer.setOffset(stretch_.inputLatency());
+
+                // PROCESSING
+                stretch_.process(inBuffer, inputLength, outBuffer, outputLength);
+
+                // Read the last bit of output without providing any further input
+                outBuffer.setOffset(outputLength);
+                stretch_.flush(outBuffer, tailSamples);
+
+                // Copy from outputChannels to outData (raw memcpy, no Python)
+                for (size_t i = 0; i < numChannels; ++i) {
+                    std::copy(outputChannels[i] + tailSamples, outputChannels[i] + paddedOutputLength , outData + i * outputLength );
+                }
+
+                // REMEMBER: Reset the stretch processor or we will get an error: free() invalid pointer
+                stretch_.reset();
+            }
+            // === GIL re-acquired ============================================
 
             // Clean up
             for (size_t i = 0; i < numChannels; ++i) {
@@ -291,7 +299,7 @@ NB_MODULE(Signalsmith, m) {
             "----------\n"
             "- timeFactor (float): Factor by which time is stretched or compressed (e.g., 0.5 slows down by half, 2.0 doubles speed).")
 
-        // PROCESSING   
+        // PROCESSING
         .def("process", &Stretch<Sample>::process,
             "audio_input"_a,
             "Process an input audio buffer and return the stretched or pitch-shifted output.\n\n"
