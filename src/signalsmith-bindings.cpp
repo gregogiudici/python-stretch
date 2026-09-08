@@ -1,6 +1,11 @@
 #include "nanobind/nanobind.h"
 #include <nanobind/ndarray.h>
+#include <nanobind/stl/optional.h>
 #include "stretch/signalsmith-stretch.h"
+
+#include <optional>
+#include <stdexcept>
+#include <vector>
 
 namespace nb = nanobind;
 
@@ -66,6 +71,100 @@ struct Stretch{
         Sample timeFactor_ = 1.f;
         Sample freqMultiplier_ = 1.f;
         Sample freqSemitones_ = 0.f;
+
+        // Channel count as of the last preset()/configure() call. The
+        // underlying SignalsmithStretch doesn't expose a getter for this,
+        // so processBlock()/seek()/flush() below need their own copy of
+        // it to size their scratch buffers and to check incoming arrays.
+        int channels_ = 0;
+
+        // Scratch owned by this object across calls, for processBlock(),
+        // seek() and flush() only -- process() above is untouched and
+        // keeps allocating and freeing its own buffers per call, exactly
+        // as before. Resized on demand and never freed early, so pointers
+        // handed to stretch_ stay valid between calls; what a caller gets
+        // back from processBlock()/flush() is always a separate, freshly
+        // allocated array (see toNumpy() below), so nothing the caller's
+        // garbage collector frees is memory stretch_ still points into.
+        std::vector<std::vector<Sample>> inScratch_;
+        std::vector<std::vector<Sample>> outScratch_;
+
+        void requireConfigured() const {
+            if (channels_ <= 0) {
+                throw std::runtime_error(
+                    "call preset()/configure() before seek()/processBlock()/flush()");
+            }
+        }
+
+        static void resizeScratch(std::vector<std::vector<Sample>> &scratch,
+                                   int channels, size_t n) {
+            if (static_cast<int>(scratch.size()) < channels) {
+                scratch.resize(channels);
+            }
+            for (int c = 0; c < channels; ++c) {
+                if (scratch[c].size() < n) {
+                    scratch[c].resize(n);
+                }
+            }
+        }
+
+        // Copies audio_input into `scratch`, following the input's own
+        // strides rather than assuming a C-contiguous layout, and accepts
+        // either a 1-D (mono) or 2-D (channels, samples) array. Returns
+        // the number of samples per channel that were copied (the caller
+        // already knows the channel count -- it's channels_, checked
+        // below).
+        size_t copyIntoScratch(std::vector<std::vector<Sample>> &scratch,
+                                const nb::ndarray<nb::numpy, Sample> &input) {
+            size_t ndim = input.ndim();
+            if (ndim != 1 && ndim != 2) {
+                throw std::invalid_argument("input must be 1-D (mono) or 2-D (channels, samples)");
+            }
+            int numChannels = (ndim == 1) ? 1 : static_cast<int>(input.shape(0));
+            size_t n = (ndim == 1) ? input.shape(0) : input.shape(1);
+            if (numChannels != channels_) {
+                throw std::invalid_argument(
+                    "input channel count does not match preset()/configure()");
+            }
+            int64_t channelStride = (ndim == 1) ? 0 : input.stride(0);
+            int64_t sampleStride  = (ndim == 1) ? input.stride(0) : input.stride(1);
+            const Sample *inData = input.data();
+
+            resizeScratch(scratch, numChannels, n);
+            for (int c = 0; c < numChannels; ++c) {
+                for (size_t i = 0; i < n; ++i) {
+                    scratch[c][i] = inData[c * channelStride + i * sampleStride];
+                }
+            }
+            return n;
+        }
+
+        static std::vector<Sample *> channelPointers(
+                std::vector<std::vector<Sample>> &scratch, int channels) {
+            std::vector<Sample *> ptrs(channels);
+            for (int c = 0; c < channels; ++c) {
+                ptrs[c] = scratch[c].data();
+            }
+            return ptrs;
+        }
+
+        // The one and only place a freshly heap-allocated, capsule-owned
+        // array is created for the caller -- everything stretch_ itself
+        // writes into is `outScratch_`, which this copies out of.
+        static nb::ndarray<nb::numpy, Sample, nb::ndim<2>> toNumpy(
+                const std::vector<std::vector<Sample>> &scratch,
+                int channels, size_t n) {
+            Sample *out = new Sample[static_cast<size_t>(channels) * n];
+            for (int c = 0; c < channels; ++c) {
+                std::copy(scratch[c].data(), scratch[c].data() + n,
+                          out + static_cast<size_t>(c) * n);
+            }
+            size_t shape[2] = {static_cast<size_t>(channels), n};
+            nb::capsule owner(out, [](void *p) noexcept {
+                delete[] static_cast<Sample *>(p);
+            });
+            return nb::ndarray<nb::numpy, Sample, nb::ndim<2>>(out, 2, shape, owner);
+        }
     public:
         Stretch() : stretch_() {}
         Stretch(long seed) : stretch_(seed) {}
@@ -107,10 +206,12 @@ struct Stretch{
                 stretch_.presetDefault(nChannels, sampleRate);
             }
             sampleRate_ = sampleRate;
+            channels_ = nChannels;
         }
         // === Manual configuration ===
         void configure(int nChannels, int blockSamples, int intervalSamples) {
             stretch_.configure(nChannels, blockSamples, intervalSamples);
+            channels_ = nChannels;
         }
 
         // Set transpose factor
@@ -223,6 +324,78 @@ struct Stretch{
             // Create the output ndarray
             return nb::ndarray<nb::numpy, float, nb::ndim<2>>(outData, 2, outShape, owner);
         }
+
+        // === Streaming ===
+        //
+        // process() above always runs seek() -> process() -> flush() ->
+        // reset() in a single call, and its own comment says why:
+        // "REMEMBER: Reset the stretch processor or we will get an error:
+        // free() invalid pointer". stretch_'s process() keeps pointers
+        // into the buffers passed to it, and process() above frees those
+        // buffers before returning, so it has to reset the processor
+        // first or the next call would hand stretch_ dangling pointers.
+        // That reset is also what makes process() a one-shot, self-
+        // contained cycle: the object can never carry state between
+        // calls, even though stretch_ itself supports being driven block
+        // by block (see its blockSamples()/intervalSamples() and its own
+        // process()/flush()/seek(), used directly below).
+        //
+        // seek()/processBlock()/flush() give that block-by-block use
+        // directly: they read from and write into `inScratch_` /
+        // `outScratch_`, which this object owns for its whole lifetime
+        // and only ever grows, never frees mid-stream -- so the pointers
+        // stretch_ is holding stay valid across calls, and none of these
+        // three touch reset(). reset() is still here, unchanged, for
+        // whoever wants to start a new stream on the same object.
+
+        // Feed pre-roll audio (history) without affecting the speed
+        // calculation, so playback can resume mid-stream without a cold
+        // start.
+        void seek(nb::ndarray<nb::numpy, Sample> audio_input, double playback_rate) {
+            requireConfigured();
+            size_t n = copyIntoScratch(inScratch_, audio_input);
+            auto ptrs = channelPointers(inScratch_, channels_);
+            stretch_.seek(ptrs.data(), static_cast<int>(n), playback_rate);
+        }
+
+        // The call this addition exists for: no seek, no flush, and it
+        // never resets, so calling it again with the next block of input
+        // continues from where the previous call left off. If
+        // output_samples is omitted, it is computed from timeFactor, the
+        // same way process() computes its own output length.
+        nb::ndarray<nb::numpy, Sample, nb::ndim<2>> processBlock(
+                nb::ndarray<nb::numpy, Sample> audio_input,
+                std::optional<long> output_samples) {
+            requireConfigured();
+            size_t inN = copyIntoScratch(inScratch_, audio_input);
+            // inN, not inScratch_[0].size(): the scratch buffer never
+            // shrinks, so its size can be larger than this call's actual
+            // input length if an earlier call passed more samples.
+            long outN = output_samples.has_value()
+                ? *output_samples
+                : std::lround(inN / timeFactor_);
+            if (outN < 0) {
+                throw std::invalid_argument("output_samples must be >= 0");
+            }
+            resizeScratch(outScratch_, channels_, static_cast<size_t>(outN));
+            auto inPtrs = channelPointers(inScratch_, channels_);
+            auto outPtrs = channelPointers(outScratch_, channels_);
+            stretch_.process(inPtrs.data(), static_cast<int>(inN), outPtrs.data(), static_cast<int>(outN));
+            return toNumpy(outScratch_, channels_, static_cast<size_t>(outN));
+        }
+
+        // Drain the remaining output with no further input, e.g. at the
+        // end of a stream.
+        nb::ndarray<nb::numpy, Sample, nb::ndim<2>> flush(long output_samples) {
+            requireConfigured();
+            if (output_samples < 0) {
+                throw std::invalid_argument("output_samples must be >= 0");
+            }
+            resizeScratch(outScratch_, channels_, static_cast<size_t>(output_samples));
+            auto outPtrs = channelPointers(outScratch_, channels_);
+            stretch_.flush(outPtrs.data(), static_cast<int>(output_samples));
+            return toNumpy(outScratch_, channels_, static_cast<size_t>(output_samples));
+        }
 };
 
 // Assuming Sample is 'float' for simplicity
@@ -301,6 +474,58 @@ NB_MODULE(Signalsmith, m) {
             "Returns:\n"
             "----------\n"
             "- numpy.ndarray: Stretched or pitch-shifted output audio buffer.")
+
+        // STREAMING
+        .def("seek", &Stretch<Sample>::seek,
+            "audio_input"_a, "playback_rate"_a,
+            "Feed pre-roll audio (history) without affecting the speed calculation,\n"
+            "so a stream can resume mid-track without a cold start. Does not return\n"
+            "output and does not reset the processor.")
+        .def("processBlock", &Stretch<Sample>::processBlock,
+            "audio_input"_a, "output_samples"_a.none() = nb::none(),
+            "Process one block of a stream and return its output. Unlike process(),\n"
+            "this never resets the processor: call it again with the next block of\n"
+            "input and it continues from where the previous call left off, so audio\n"
+            "can be driven through in a sequence of smaller blocks rather than all at\n"
+            "once. If output_samples is omitted, it is computed from timeFactor, the\n"
+            "same way process() computes its own output length.\n\n"
+            "Parameters:\n"
+            "----------\n"
+            "- audio_input (numpy.ndarray): 1-D (mono) or 2-D (channels, samples) block\n"
+            "  of input audio. Any memory layout is accepted.\n"
+            "- output_samples (int, optional): number of output samples to produce for\n"
+            "  this block.\n\n"
+            "Returns:\n"
+            "----------\n"
+            "- numpy.ndarray: this block's stretched or pitch-shifted output.")
+        .def("flush", &Stretch<Sample>::flush,
+            "output_samples"_a,
+            "Drain the remaining output with no further input, e.g. at the end of a\n"
+            "stream driven through processBlock(). Does not reset the processor.\n\n"
+            "IMPORTANT -- a short flush does not truncate, it folds:\n"
+            "----------\n"
+            "Ask for exactly the number of samples you intend to keep. Requesting\n"
+            "fewer than the natural tail length gives you DIFFERENT audio, not\n"
+            "shorter audio.\n\n"
+            "The natural tail is blockSamples() samples, which is also exactly\n"
+            "inputLatency() + outputLatency(). Below that length the underlying\n"
+            "library takes the part that would not fit, reverses it in time and\n"
+            "SUBTRACTS it onto the end of the buffer you asked for, so a short\n"
+            "flush carries more energy than the corresponding prefix of a full\n"
+            "one. This is deliberate anti-truncation behaviour in the library\n"
+            "itself, not a quirk of this binding.\n\n"
+            "The practical consequence is easy to get wrong: flushing generously\n"
+            "and slicing the result does NOT give the same audio as flushing\n"
+            "exactly. flush(4 * n)[:n] and flush(n) differ. At or above the\n"
+            "natural tail the output is prefix-stable and slicing is safe.\n\n"
+            "Parameters:\n"
+            "----------\n"
+            "- output_samples (int): number of output samples to drain. Must be\n"
+            "  >= 0. See the note above before choosing a value below\n"
+            "  blockSamples().\n\n"
+            "Returns:\n"
+            "----------\n"
+            "- numpy.ndarray: the drained tail.")
         ;
         // .def("setFreqMap", &Stretch<Sample>::setFreqMap,
         //     "inputToOutput"_a) // TODO: implement custom frequency mapping
