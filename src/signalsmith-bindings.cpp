@@ -501,7 +501,31 @@ NB_MODULE(Signalsmith, m) {
         .def("flush", &Stretch<Sample>::flush,
             "output_samples"_a,
             "Drain the remaining output with no further input, e.g. at the end of a\n"
-            "stream driven through processBlock(). Does not reset the processor.")
+            "stream driven through processBlock(). Does not reset the processor.\n\n"
+            "IMPORTANT -- a short flush does not truncate, it folds:\n"
+            "----------\n"
+            "Ask for exactly the number of samples you intend to keep. Requesting\n"
+            "fewer than the natural tail length gives you DIFFERENT audio, not\n"
+            "shorter audio.\n\n"
+            "The natural tail is blockSamples() samples, which is also exactly\n"
+            "inputLatency() + outputLatency(). Below that length the underlying\n"
+            "library takes the part that would not fit, reverses it in time and\n"
+            "SUBTRACTS it onto the end of the buffer you asked for, so a short\n"
+            "flush carries more energy than the corresponding prefix of a full\n"
+            "one. This is deliberate anti-truncation behaviour in the library\n"
+            "itself, not a quirk of this binding.\n\n"
+            "The practical consequence is easy to get wrong: flushing generously\n"
+            "and slicing the result does NOT give the same audio as flushing\n"
+            "exactly. flush(4 * n)[:n] and flush(n) differ. At or above the\n"
+            "natural tail the output is prefix-stable and slicing is safe.\n\n"
+            "Parameters:\n"
+            "----------\n"
+            "- output_samples (int): number of output samples to drain. Must be\n"
+            "  >= 0. See the note above before choosing a value below\n"
+            "  blockSamples().\n\n"
+            "Returns:\n"
+            "----------\n"
+            "- numpy.ndarray: the drained tail.")
         ;
         // .def("setFreqMap", &Stretch<Sample>::setFreqMap,
         //     "inputToOutput"_a) // TODO: implement custom frequency mapping
