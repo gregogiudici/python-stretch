@@ -2,6 +2,8 @@
 #include <nanobind/ndarray.h>
 #include "stretch/signalsmith-stretch.h"
 
+#include <stdexcept>
+
 namespace nb = nanobind;
 
 using namespace nb::literals;
@@ -151,12 +153,26 @@ struct Stretch{
         // ====================
 
         // === Processing ===
-        nb::ndarray<nb::numpy, float, nb::ndim<2>> process(nb::ndarray<nb::numpy, float, nb::ndim<2>> audio_input) {
-            auto inData = audio_input.data();
+        nb::ndarray<nb::numpy, float, nb::ndim<2>> process(nb::ndarray<nb::numpy, float> audio_input) {
+            // Accept 1-D (mono) or 2-D (channels, samples) input, and read
+            // every sample through its own stride instead of assuming the
+            // array is C-contiguous. A transposed array -- what
+            // librosa.load(..., mono=False) commonly returns -- is a view
+            // with the channel and sample strides swapped relative to a
+            // freshly-allocated one, and copying through it as if it were
+            // still contiguous is what produced the corrupted output in
+            // issue #3.
+            size_t ndim = audio_input.ndim();
+            if (ndim != 1 && ndim != 2) {
+                throw std::invalid_argument("audio_input must be 1-D (mono) or 2-D (channels, samples)");
+            }
 
-            size_t numChannels = audio_input.shape(0);
-            size_t inputLength  = audio_input.shape(1);
-            
+            size_t numChannels = (ndim == 1) ? 1 : audio_input.shape(0);
+            size_t inputLength  = (ndim == 1) ? audio_input.shape(0) : audio_input.shape(1);
+            int64_t channelStride = (ndim == 1) ? 0 : audio_input.stride(0);
+            int64_t sampleStride  = (ndim == 1) ? audio_input.stride(0) : audio_input.stride(1);
+            const float* inData = audio_input.data();
+
             // Padding for latency
             size_t paddedInputLength = inputLength  + stretch_.inputLatency();
             int tailSamples = stretch_.outputLatency();
@@ -166,15 +182,22 @@ struct Stretch{
             // Allocate and initialize buffers
             float** inputChannels = new float*[numChannels];
             float** outputChannels = new float*[numChannels];
-            
+
             for (size_t i = 0; i < numChannels; ++i) {
                 inputChannels[i] = new float[paddedInputLength]();
                 outputChannels[i] = new float[paddedOutputLength]();
             }
 
-            // Copy from inData to inputChannels
-            for (size_t i = 0; i < numChannels; ++i) {
-                std::copy(inData + i*inputLength  , inData + (i+1)*inputLength  , inputChannels[i]);
+            // Copy from inData to inputChannels, following the input's own
+            // strides. This buffer is always freshly allocated and this
+            // copy always ran before, contiguous or not, so reading through
+            // strides here costs nothing extra over the old std::copy --
+            // it just also gives the right answer when the input isn't
+            // C-contiguous.
+            for (size_t c = 0; c < numChannels; ++c) {
+                for (size_t i = 0; i < inputLength; ++i) {
+                    inputChannels[c][i] = inData[c * channelStride + i * sampleStride];
+                }
             }
 
             // Wrap input/output channel-buffer with Buffer class (for offset reading/writing)
@@ -297,7 +320,10 @@ NB_MODULE(Signalsmith, m) {
             "Process an input audio buffer and return the stretched or pitch-shifted output.\n\n"
             "Parameters:\n"
             "----------\n"
-            "- audio_input (numpy.ndarray): Input audio buffer to be processed.\n\n"
+            "- audio_input (numpy.ndarray): 1-D (mono) or 2-D (channels, samples) input\n"
+            "  audio buffer to be processed. Any memory layout is accepted, including\n"
+            "  non-contiguous arrays such as a transposed librosa.load(..., mono=False)\n"
+            "  result.\n\n"
             "Returns:\n"
             "----------\n"
             "- numpy.ndarray: Stretched or pitch-shifted output audio buffer.")
