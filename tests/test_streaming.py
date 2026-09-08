@@ -230,6 +230,21 @@ def test_seek_and_flush_do_not_crash_and_return_correct_shapes():
     assert tail.shape == (2, s.outputLatency())
 
 
+def test_processblock_output_samples_defaults_to_timefactor():
+    # Same default as process(): output length = round(input length /
+    # timeFactor), used whenever output_samples isn't given.
+    s = m.Signalsmith.Stretch(seed=0)
+    s.preset(1, SR)
+    s.setTimeFactor(2.0)
+    block = np.zeros((1, 1000), dtype=np.float32)
+
+    out_explicit_none = s.processBlock(block, None)
+    assert out_explicit_none.shape == (1, 500)
+
+    out_omitted = s.processBlock(block)
+    assert out_omitted.shape == (1, 500)
+
+
 def test_processblock_before_configure_raises_a_clear_error():
     s = m.Signalsmith.Stretch(seed=0)
     audio = np.zeros((1, 100), dtype=np.float32)
