@@ -464,7 +464,7 @@ NB_MODULE(Signalsmith, m) {
             "----------\n"
             "- timeFactor (float): Factor by which time is stretched or compressed (e.g., 0.5 slows down by half, 2.0 doubles speed).")
 
-        // PROCESSING
+        // PROCESSING   
         .def("process", &Stretch<Sample>::process,
             "audio_input"_a,
             "Process an input audio buffer and return the stretched or pitch-shifted output.\n\n"
